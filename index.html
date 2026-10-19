@@ -1,0 +1,1042 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#050607">
+<meta name="color-scheme" content="dark">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Sleep Sounds">
+<title>Sleep Sounds</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<style>
+:root {
+  --bg: #050607;
+  --panel: #0b0e10;
+  --panel-2: #0f1316;
+  --line: #182024;
+  --text: #7d878c;
+  --text-dim: #4c5559;
+  --text-faint: #333b3f;
+  --ocean: #1f4a63;
+  --ocean-dim: #12303f;
+  --moss: #3e5b3c;
+  --moss-dim: #213322;
+  --accent-text: #8fa6a8;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; background: var(--bg); color: var(--text); }
+body {
+  font: 16px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  padding: max(16px, env(safe-area-inset-top)) 16px max(32px, env(safe-area-inset-bottom));
+  max-width: 620px; margin: 0 auto;
+  touch-action: manipulation;
+  -webkit-user-select: none; user-select: none;
+  overflow-x: hidden;
+}
+button { font: inherit; color: inherit; cursor: pointer; }
+h1 { font-size: 15px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: var(--text-dim); margin: 0; }
+.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; }
+.dim-btn {
+  min-height: 44px; padding: 0 16px; border-radius: 22px; border: 1px solid var(--line);
+  background: var(--panel); color: var(--text-dim);
+}
+#prep { font-size: 13px; color: var(--text-dim); height: 18px; margin: 4px 0 8px; opacity: 0; transition: opacity .4s; }
+#prep.on { opacity: 1; }
+#prep .bar { display: inline-block; width: 60px; height: 3px; background: var(--line); border-radius: 2px; margin-left: 8px; vertical-align: middle; overflow: hidden; position: relative; }
+#prep .bar::after { content: ""; position: absolute; inset: 0; width: 40%; background: var(--ocean); animation: slide 1.6s ease-in-out infinite; }
+@keyframes slide { 0% { left: -40%; } 100% { left: 100%; } }
+
+.section-label { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--text-faint); margin: 18px 2px 8px; }
+.presets { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.preset {
+  position: relative; min-height: 56px; padding: 8px 12px; border-radius: 14px;
+  background: var(--panel); border: 1px solid var(--line); color: var(--text);
+  text-align: left; display: flex; align-items: center; overflow: hidden;
+}
+.preset .pname { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.preset.active { border-color: var(--ocean); background: var(--ocean-dim); color: var(--accent-text); }
+.preset.custom { padding-right: 48px; }
+.preset .del {
+  position: absolute; right: 0; top: 0; bottom: 0; width: 48px; border: 0; background: transparent;
+  color: var(--text-faint); font-size: 20px;
+}
+.preset.save { color: var(--text-dim); border-style: dashed; justify-content: center; }
+
+.player { display: flex; flex-direction: column; align-items: center; margin: 22px 0 6px; }
+#play {
+  width: 148px; height: 148px; border-radius: 50%; border: 1px solid var(--line);
+  background: radial-gradient(circle at 50% 40%, #10171b, #080b0d);
+  display: grid; place-items: center; color: var(--accent-text);
+}
+#play.playing { border-color: var(--moss); box-shadow: 0 0 40px rgba(62, 91, 60, .12); }
+#play svg { width: 56px; height: 56px; fill: currentColor; opacity: .75; }
+#nowLabel { margin-top: 12px; color: var(--text-dim); font-size: 14px; min-height: 20px; text-align: center; }
+
+.row { display: flex; align-items: center; gap: 12px; }
+.row .lbl { width: 64px; color: var(--text-dim); font-size: 14px; flex: none; }
+.master { margin: 14px 0 4px; }
+
+input[type=range] {
+  -webkit-appearance: none; appearance: none; flex: 1; min-width: 0; height: 44px; background: transparent; margin: 0;
+}
+input[type=range]::-webkit-slider-runnable-track { height: 6px; border-radius: 3px; background: var(--line); }
+input[type=range]::-moz-range-track { height: 6px; border-radius: 3px; background: var(--line); }
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 30px; height: 30px; border-radius: 50%; margin-top: -12px;
+  background: #2a3a40; border: 1px solid #36474d;
+}
+input[type=range]::-moz-range-thumb { width: 30px; height: 30px; border-radius: 50%; background: #2a3a40; border: 1px solid #36474d; }
+input[type=range]:disabled { opacity: .35; }
+
+.seg { display: flex; gap: 6px; flex: 1; }
+.seg button {
+  flex: 1; min-height: 44px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel);
+  color: var(--text-dim); font-size: 14px; padding: 0 4px;
+}
+.seg button.on { background: var(--moss-dim); border-color: var(--moss); color: var(--accent-text); }
+#timerLeft { font-size: 13px; color: var(--text-dim); text-align: right; min-height: 18px; margin-top: 4px; }
+
+.cards { display: flex; flex-direction: column; gap: 10px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 6px 14px 10px; }
+.card.on { border-color: #1d2c30; background: var(--panel-2); }
+.card .head {
+  width: 100%; min-height: 58px; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  background: none; border: 0; padding: 0; text-align: left;
+}
+.card .title { font-size: 17px; color: var(--text); }
+.card .sub { font-size: 13px; color: var(--text-faint); }
+.card.on .title { color: var(--accent-text); }
+.switch { flex: none; width: 56px; height: 32px; border-radius: 16px; background: #13191c; border: 1px solid var(--line); position: relative; transition: background .3s; }
+.switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%; background: #2a3236; transition: transform .25s, background .3s; }
+.card.on .switch { background: var(--moss-dim); border-color: var(--moss); }
+.card.on .switch::after { transform: translateX(24px); background: #5f7d5c; }
+.card[data-id=ocean].on .switch, .card[data-id=purifier].on .switch, .card[data-id=shower].on .switch { background: var(--ocean-dim); border-color: var(--ocean); }
+.card[data-id=ocean].on .switch::after, .card[data-id=purifier].on .switch::after, .card[data-id=shower].on .switch::after { background: #44708a; }
+.extras { display: flex; gap: 6px; margin-top: 2px; }
+
+#dim { position: fixed; inset: 0; background: #000; z-index: 99; display: none; }
+#dim.on { display: block; }
+#dim p { position: absolute; bottom: 30px; width: 100%; text-align: center; color: #111; font-size: 13px; margin: 0; }
+.foot { margin-top: 22px; font-size: 12px; color: var(--text-faint); text-align: center; }
+#resume { display: none; margin-top: 10px; min-height: 44px; padding: 0 18px; border-radius: 22px; border: 1px solid var(--ocean); background: var(--ocean-dim); color: var(--accent-text); }
+</style>
+</head>
+<body>
+<div class="top">
+  <h1>Sleep Sounds</h1>
+  <button class="dim-btn" id="dimBtn" aria-label="Black out the screen">Dim</button>
+</div>
+<div id="prep" aria-live="polite"><span id="prepText">Preparing sounds…</span><span class="bar"></span></div>
+
+<div class="section-label">Presets</div>
+<div class="presets" id="presets"></div>
+
+<div class="player">
+  <button id="play" aria-label="Play"></button>
+  <div id="nowLabel"></div>
+  <button id="resume">Tap to resume audio</button>
+</div>
+
+<div class="row master">
+  <span class="lbl">Volume</span>
+  <input type="range" id="master" min="0" max="100" step="1" aria-label="Master volume">
+</div>
+
+<div class="row">
+  <span class="lbl">Timer</span>
+  <div class="seg" id="timer"></div>
+</div>
+<div id="timerLeft"></div>
+
+<div class="section-label">Sounds</div>
+<div class="cards" id="cards"></div>
+
+<div class="foot">Works offline · Audio keeps playing with the screen locked</div>
+
+<div id="dim"><p>Tap to wake</p></div>
+
+<!-- ===================== Audio synthesis worker ===================== -->
+<script type="text/plain" id="worker-src">
+'use strict';
+const SR = 22050;          // sample rate (Nyquist 11 kHz is plenty for sleep sounds)
+const LOOP = 180;          // every mix is a 180 s loop; layer lengths divide it
+const VERSION = 4;         // bump to invalidate cached layers
+const LEN = { fan: 60, purifier: 60, rain: 60, shower: 60, creek: 60, forest: 180, birds: 180, oceanD: 180, oceanS: 180 };
+const NAMES = ['fan', 'purifier', 'rain', 'shower', 'forest', 'creek', 'birds', 'oceanD', 'oceanS'];
+// Final loudness of each layer at gain 1.0 (RMS, or peak for the sparse bird layer).
+const TARGET = { fan: 0.16, purifier: 0.12, rain: 0.12, shower: 0.11, forest: 0.13, creek: 0.10, birds: 0.30, oceanD: 0.14, oceanS: 0.13 };
+const TAU = Math.PI * 2;
+
+// ---------- DSP building blocks ----------
+function rng(seed) {
+  let s = (seed * 2654435761) >>> 0 || 1;
+  return () => { s ^= s << 13; s ^= s >>> 17; s ^= s << 5; return (s >>> 0) / 4294967296; };
+}
+class BQ {
+  constructor(type, f, q = 0.707, db = 0) { this.x1 = this.x2 = this.y1 = this.y2 = 0; this.set(type, f, q, db); }
+  set(type, f, q = 0.707, db = 0) {
+    const w = TAU * Math.min(f, SR * 0.45) / SR, cs = Math.cos(w), sn = Math.sin(w), a = sn / (2 * q), A = Math.pow(10, db / 40);
+    let b0, b1, b2, a0, a1, a2;
+    if (type === 'lp') { b0 = (1 - cs) / 2; b1 = 1 - cs; b2 = b0; a0 = 1 + a; a1 = -2 * cs; a2 = 1 - a; }
+    else if (type === 'hp') { b0 = (1 + cs) / 2; b1 = -(1 + cs); b2 = b0; a0 = 1 + a; a1 = -2 * cs; a2 = 1 - a; }
+    else if (type === 'bp') { b0 = a; b1 = 0; b2 = -a; a0 = 1 + a; a1 = -2 * cs; a2 = 1 - a; }
+    else { b0 = 1 + a * A; b1 = -2 * cs; b2 = 1 - a * A; a0 = 1 + a / A; a1 = -2 * cs; a2 = 1 - a / A; } // peak
+    this.b0 = b0 / a0; this.b1 = b1 / a0; this.b2 = b2 / a0; this.a1 = a1 / a0; this.a2 = a2 / a0;
+  }
+  p(x) {
+    const y = this.b0 * x + this.b1 * this.x1 + this.b2 * this.x2 - this.a1 * this.y1 - this.a2 * this.y2;
+    this.x2 = this.x1; this.x1 = x; this.y2 = this.y1; this.y1 = y; return y;
+  }
+}
+// Zero-delay state-variable filter: smooth when its cutoff is swept (used for waves).
+class SVF {
+  constructor(f, q = 0.7) { this.s1 = this.s2 = 0; this.k = 1 / q; this.set(f); }
+  set(f) { const g = Math.tan(Math.PI * Math.min(f, SR * 0.45) / SR); this.a1 = 1 / (1 + g * (g + this.k)); this.a2 = g * this.a1; this.a3 = g * this.a2; }
+  p(x) {
+    const v3 = x - this.s2, v1 = this.a1 * this.s1 + this.a2 * v3, v2 = this.s2 + this.a2 * this.s1 + this.a3 * v3;
+    this.s1 = 2 * v1 - this.s1; this.s2 = 2 * v2 - this.s2; return v2;
+  }
+}
+const white = r => () => r() * 2 - 1;
+function pink(r) {
+  let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
+  return () => {
+    const w = r() * 2 - 1;
+    b0 = 0.99886 * b0 + w * 0.0555179; b1 = 0.99332 * b1 + w * 0.0750759; b2 = 0.969 * b2 + w * 0.153852;
+    b3 = 0.8665 * b3 + w * 0.3104856; b4 = 0.55 * b4 + w * 0.5329522; b5 = -0.7616 * b5 - w * 0.016898;
+    const o = b0 + b1 + b2 + b3 + b4 + b5 + b6 + w * 0.5362; b6 = w * 0.115926; return o;
+  };
+}
+function brown(r) { let l = 0; return () => { l = (l + 0.02 * (r() * 2 - 1)) / 1.02; return l; }; }
+// Smooth random wander in [-1, 1]; picks a new target `rate` times per second.
+function wander(r, rate) {
+  let a = r() * 2 - 1, b = r() * 2 - 1, ph = r(); const inc = rate / SR;
+  return () => { ph += inc; if (ph >= 1) { ph -= 1; a = b; b = r() * 2 - 1; } return a + (b - a) * (1 - Math.cos(Math.PI * ph)) / 2; };
+}
+// Wrap a generator factory so its output has unit RMS (measured on a private calibration run).
+function unit(make, r) {
+  const t = make(rng(4242)); for (let i = 0; i < SR; i++) t();
+  let s = 0; const n = SR * 3; for (let i = 0; i < n; i++) { const v = t(); s += v * v; }
+  const k = 1 / Math.sqrt(s / n || 1); const g = make(r); return () => g() * k;
+}
+const chain = (src, ...f) => () => { let x = src(); for (let i = 0; i < f.length; i++) x = f[i].p(x); return x; };
+const stereo = n => [new Float32Array(n), new Float32Array(n)];
+const panL = p => Math.cos((p + 1) * Math.PI / 4) * Math.SQRT2;
+const panR = p => Math.sin((p + 1) * Math.PI / 4) * Math.SQRT2;
+
+// Fold the X-sample tail of a (len+X) render back over its head with an equal-power
+// crossfade, so sample len-1 flows straight into sample 0: a click-free loop.
+function loopify(b, len, X) {
+  const o = stereo(len);
+  for (let c = 0; c < 2; c++) {
+    const s = b[c], d = o[c]; d.set(s.subarray(0, len));
+    for (let i = 0; i < X; i++) { const t = i / X; d[i] = s[i] * Math.sin(t * Math.PI / 2) + s[len + i] * Math.cos(t * Math.PI / 2); }
+  }
+  return o;
+}
+function rms(b) { let s = 0; for (const c of b) for (let i = 0; i < c.length; i++) s += c[i] * c[i]; return Math.sqrt(s / (b[0].length * 2)); }
+function scale(b, k) { for (const c of b) for (let i = 0; i < c.length; i++) c[i] *= k; }
+
+// Short filtered-noise burst (rain drop, pebble tick). Written with wrap-around so loops stay seamless.
+function burst(o, r, at, f, q, tau, amp, pan) {
+  const bq = new BQ('bp', f, q), N = o[0].length, n = Math.min(Math.ceil(tau * SR * 7), SR), att = Math.max(2, Math.round(0.0005 * SR));
+  const gl = amp * panL(pan), gr = amp * panR(pan), kd = Math.exp(-1 / (tau * SR));
+  let e = 1, k = ((at % N) + N) % N;
+  for (let j = 0; j < n; j++) {
+    const y = bq.p((r() * 2 - 1) * (j < att ? j / att : 1) * e); e *= kd;
+    o[0][k] += y * gl; o[1][k] += y * gr; if (++k >= N) k = 0;
+  }
+}
+// Damped sine with a small upward pitch glide: the "plip" of a drop or a creek bubble.
+function plop(o, at, f0, rise, tau, amp, pan) {
+  const N = o[0].length, n = Math.min(Math.ceil(tau * SR * 7), SR), gl = amp * panL(pan), gr = amp * panR(pan);
+  let ph = 0, k = ((at % N) + N) % N;
+  for (let j = 0; j < n; j++) {
+    const t = j / SR, f = Math.min(f0 * (1 + (rise - 1) * (1 - Math.exp(-t / tau))), SR * 0.45);
+    ph += TAU * f / SR;
+    const y = Math.sin(ph) * (1 - Math.exp(-t / 0.0012)) * Math.exp(-t / tau);
+    o[0][k] += y * gl; o[1][k] += y * gr; if (++k >= N) k = 0;
+  }
+}
+
+// ---------- Sounds ----------
+function synthFan() {
+  const len = 60 * SR, X = 4 * SR, N = len + X, r = rng(101), b = stereo(N);
+  const mk = rr => { const g = brown(rr), f1 = new BQ('lp', 700, 0.55), f2 = new BQ('lp', 1500, 0.5), f3 = new BQ('hp', 28); return chain(g, f1, f2, f3); };
+  const mid = unit(mk, r), sideL = unit(mk, r), sideR = unit(mk, r);
+  const mkAir = rr => chain(pink(rr), new BQ('lp', 2400, 0.5), new BQ('hp', 120));
+  const airL = unit(mkAir, r), airR = unit(mkAir, r);
+  const mkMid = rr => chain(pink(rr), new BQ('bp', 320, 0.6), new BQ('lp', 1200, 0.5));
+  const midL = unit(mkMid, r), midR = unit(mkMid, r);
+  const w1 = wander(r, 0.12), w2 = wander(r, 0.035);
+  for (let i = 0; i < N; i++) {
+    const m = mid(), a = 1 + 0.03 * w1() + 0.025 * w2();
+    b[0][i] = (m * 0.75 + sideL() * 0.5 + airL() * 0.42 + midL() * 0.38) * a;
+    b[1][i] = (m * 0.75 + sideR() * 0.5 + airR() * 0.42 + midR() * 0.38) * a;
+  }
+  const o = loopify(b, len, X); scale(o, 1 / rms(o));
+  // Blade flutter and motor hum use whole-number cycles per 60 s, so they loop perfectly.
+  for (let i = 0; i < len; i++) {
+    const t = i / SR, am = 1 + 0.012 * Math.sin(TAU * 11.5 * t) + 0.005 * Math.sin(TAU * 23 * t + 1.3);
+    const hum = (0.03 * Math.sin(TAU * 58 * t) + 0.012 * Math.sin(TAU * 116 * t + 0.7) + 0.005 * Math.sin(TAU * 174 * t + 2)) * (1 + 0.3 * Math.sin(TAU * t / 30));
+    o[0][i] = o[0][i] * am + hum; o[1][i] = o[1][i] * am + hum;
+  }
+  return o;
+}
+
+function synthPurifier() {
+  const len = 60 * SR, X = 4 * SR, N = len + X, r = rng(202), b = stereo(N);
+  const mk = rr => chain(pink(rr), new BQ('hp', 140, 0.7), new BQ('lp', 5200, 0.6), new BQ('peak', 950, 0.8, 2.5));
+  const c = unit(mk, r), l = unit(mk, r), rr2 = unit(mk, r);
+  const mkBody = rr => chain(brown(rr), new BQ('lp', 320), new BQ('hp', 40));
+  const body = unit(mkBody, r), w = wander(r, 0.06);
+  for (let i = 0; i < N; i++) {
+    const a = 1 + 0.012 * w(), cc = c() * 0.6, bd = body() * 0.3;
+    b[0][i] = (cc + l() * 0.75 + bd) * a; b[1][i] = (cc + rr2() * 0.75 + bd) * a;
+  }
+  return loopify(b, len, X);
+}
+
+function synthRain() {
+  const len = 60 * SR, X = 4 * SR, N = len + X, r = rng(303), b = stereo(N);
+  const mk = rr => chain(pink(rr), new BQ('hp', 280, 0.7), new BQ('lp', 6500, 0.6), new BQ('peak', 2500, 0.9, 2));
+  const c = unit(mk, r), l = unit(mk, r), rr2 = unit(mk, r);
+  const body = unit(rr => chain(brown(rr), new BQ('lp', 450), new BQ('hp', 35)), r);
+  const w = wander(r, 0.05), w2 = wander(r, 0.2);
+  for (let i = 0; i < N; i++) {
+    const a = 1 + 0.05 * w() + 0.02 * w2(), cc = c() * 0.5, bd = body() * 0.45;
+    b[0][i] = (cc + l() * 0.85 + bd) * a; b[1][i] = (cc + rr2() * 0.85 + bd) * a;
+  }
+  const o = loopify(b, len, X); scale(o, 1 / rms(o));
+  // Soft droplets: many tiny filtered ticks, mostly quiet, scattered across the stereo field.
+  for (let k = 0; k < 60 * 120; k++) {
+    const amp = 2.2 * (0.12 + Math.pow(r(), 3) * 0.9);
+    burst(o, r, Math.floor(r() * len), 1500 + r() * 5000, 1.2 + r() * 3, 0.0015 + r() * 0.006, amp, r() * 1.8 - 0.9);
+  }
+  // A few gentle "plinks" of drops landing in puddles.
+  for (let k = 0; k < 60 * 3; k++) plop(o, Math.floor(r() * len), 1100 + r() * 2000, 1.08, 0.012 + r() * 0.02, 0.05 + r() * 0.1, r() * 1.6 - 0.8);
+  return o;
+}
+
+function synthShower() {
+  const len = 60 * SR, X = 3 * SR, N = len + X, r = rng(404), b = stereo(N);
+  const mk = rr => { const w = white(rr), p = pink(rr); return chain(() => w() * 0.35 + p() * 0.1, new BQ('hp', 380, 0.7), new BQ('peak', 3600, 0.7, 4), new BQ('lp', 9500, 0.6)); };
+  const l = unit(mk, r), rr2 = unit(mk, r), c = unit(mk, r);
+  const tub = unit(rr => chain(pink(rr), new BQ('bp', 650, 0.6)), r);
+  // Fast random turbulence: noise low-passed to ~30 Hz drives the amplitude.
+  const mkTurb = rr => chain(white(rr), new BQ('lp', 30, 0.6), new BQ('lp', 30, 0.6));
+  const tL = unit(mkTurb, r), tR = unit(mkTurb, r), w = wander(r, 0.4);
+  for (let i = 0; i < N; i++) {
+    const s = 1 + 0.04 * w(), cc = c() * 0.5, tb = tub() * 0.35;
+    b[0][i] = ((l() * 0.8 + cc) * (1 + 0.2 * tL()) + tb) * s;
+    b[1][i] = ((rr2() * 0.8 + cc) * (1 + 0.2 * tR()) + tb) * s;
+  }
+  const o = loopify(b, len, X); scale(o, 1 / rms(o));
+  for (let k = 0; k < 60 * 350; k++) burst(o, r, Math.floor(r() * len), 2800 + r() * 6000, 2 + r() * 3, 0.0005 + r() * 0.0015, 1.6 * (0.2 + r() * r()), r() * 1.6 - 0.8);
+  return o;
+}
+
+function synthForest() {
+  const len = 180 * SR, X = 6 * SR, N = len + X, r = rng(505), b = stereo(N);
+  // Canopy-softened rain: pink noise, steep low-pass, so it's warmer and more muffled than open rain.
+  const mk = rr => chain(pink(rr), new BQ('lp', 1300, 0.5), new BQ('lp', 2100, 0.5), new BQ('hp', 60));
+  const c = unit(mk, r), l = unit(mk, r), rr2 = unit(mk, r);
+  const body = unit(rr => chain(brown(rr), new BQ('lp', 300), new BQ('hp', 30)), r);
+  const w1 = wander(r, 0.03), w2 = wander(r, 0.12);
+  for (let i = 0; i < N; i++) {
+    const a = 1 + 0.07 * w1() + 0.03 * w2(), cc = c() * 0.55, bd = body() * 0.6;
+    b[0][i] = (cc + l() * 0.8 + bd) * a; b[1][i] = (cc + rr2() * 0.8 + bd) * a;
+  }
+  const o = loopify(b, len, X); scale(o, 1 / rms(o));
+  // Leaf patter: medium, muffled drops.
+  for (let k = 0; k < 180 * 30; k++) burst(o, r, Math.floor(r() * len), 600 + r() * 1700, 1.4 + r() * 2, 0.003 + r() * 0.008, 1.5 * (0.15 + r() * r() * 0.8), r() * 1.8 - 0.9);
+  // Heavier irregular drips from leaves and branches; the rate drifts so they come and go.
+  const drip = (at, big) => {
+    const dist = r(), pan = r() * 1.9 - 0.95, amp = (big ? 0.55 + 0.45 * r() : 0.3 + 0.7 * Math.pow(r(), 1.5)) * (1 - 0.6 * dist);
+    if (r() < 0.3) { // drop hitting a leaf: short, higher tap
+      const f = 900 + r() * 1200; plop(o, at, f, 1.1, 0.007 + r() * 0.01, amp * 0.55, pan); burst(o, r, at, f * 1.4, 1.2, 0.004, amp * 1.6, pan);
+    } else {          // drop landing on wet ground/moss: deeper, rounder
+      const f = 260 + r() * 650; plop(o, at, f, 1.15 + r() * 0.2, 0.02 + r() * 0.045, amp * 0.75, pan); burst(o, r, at, f * 1.6, 0.8, 0.006, amp * 1.8, pan);
+    }
+  };
+  const ph1 = r() * TAU, ph2 = r() * TAU;
+  for (let t = 0; t < 180;) {
+    const rate = 1.5 * (1 + 0.45 * Math.sin(TAU * t / 53 + ph1) + 0.3 * Math.sin(TAU * t / 23 + ph2));
+    t += -Math.log(1 - r()) / rate; drip(Math.floor(t * SR), false);
+  }
+  // Occasional gust shaking a branch: a short cluster of drips.
+  for (let t = 8 + r() * 15; t < 178; t += 18 + r() * 28) {
+    const n = 5 + Math.floor(r() * 9), spread = 0.4 + r() * 0.9;
+    for (let k = 0; k < n; k++) drip(Math.floor((t + r() * r() * spread) * SR), true);
+  }
+  return o;
+}
+
+function synthCreek() {
+  const len = 60 * SR, X = 4 * SR, N = len + X, r = rng(606), b = stereo(N);
+  const bands = [[380, 1.1, 5, 1], [850, 1.3, 7, 0.8], [1700, 1.5, 9, 0.5], [2800, 1.8, 12, 0.22]].map(([f, q, rate, wgt]) => ({
+    l: unit(rr => chain(pink(rr), new BQ('bp', f, q)), r), r: unit(rr => chain(pink(rr), new BQ('bp', f * 1.06, q)), r),
+    ml: wander(r, rate), mr: wander(r, rate * 1.13), wgt,
+  }));
+  const fl = [new BQ('lp', 2600, 0.6), new BQ('hp', 110)], fr = [new BQ('lp', 2600, 0.6), new BQ('hp', 110)];
+  for (let i = 0; i < N; i++) {
+    let L = 0, R = 0;
+    for (const bd of bands) {
+      L += bd.l() * bd.wgt * Math.pow(Math.max(0, 0.55 + 0.6 * bd.ml()), 1.5);
+      R += bd.r() * bd.wgt * Math.pow(Math.max(0, 0.55 + 0.6 * bd.mr()), 1.5);
+    }
+    b[0][i] = L; b[1][i] = R;
+  }
+  for (let i = 0; i < N; i++) { b[0][i] = fl[1].p(fl[0].p(b[0][i])); b[1][i] = fr[1].p(fr[0].p(b[1][i])); }
+  const o = loopify(b, len, X); scale(o, 1 / rms(o));
+  // Bubbles and small burbles.
+  for (let k = 0; k < 60 * 35; k++) plop(o, Math.floor(r() * len), 350 + r() * 1100, 1.3 + r() * 0.5, 0.006 + r() * 0.014, 0.25 + r() * 0.35, r() * 1.2 - 0.6);
+  return o;
+}
+
+function synthBirds() {
+  const len = 180 * SR, r = rng(707), dry = stereo(len);
+  const note = (at, dur, f0, f1, amp, pan, vib = 0) => {
+    const n = Math.floor(dur * SR), gl = amp * panL(pan), gr = amp * panR(pan); let ph = 0;
+    for (let j = 0; j < n; j++) {
+      const x = j / n, f = f0 * Math.pow(f1 / f0, x) * (1 + vib * Math.sin(TAU * 7 * j / SR));
+      ph += TAU * f / SR; const e = Math.pow(Math.sin(Math.PI * x), 1.6), y = (Math.sin(ph) + 0.12 * Math.sin(2 * ph)) * e;
+      const k = (at + j) % len; dry[0][k] += y * gl; dry[1][k] += y * gr;
+    }
+  };
+  const species = [
+    (t, a, p) => { const n = 3 + Math.floor(r() * 4), f = 3600 + r() * 900; for (let i = 0; i < n; i++) note(t + Math.floor(i * (0.16 + r() * 0.06) * SR), 0.07 + r() * 0.04, f, f * 0.72, a, p); },
+    (t, a, p) => { const f = 2300 + r() * 600; note(t, 0.32, f, f * 1.05, a, p, 0.01); note(t + Math.floor(0.42 * SR), 0.4, f * 1.25, f * 1.2, a * 0.9, p, 0.012); },
+    (t, a, p) => { const n = 14 + Math.floor(r() * 10), f = 3300 + r() * 700; for (let i = 0; i < n; i++) note(t + Math.floor(i * 0.045 * SR), 0.03, f, f * 0.95, a * (0.6 + 0.4 * Math.sin(Math.PI * i / n)), p); },
+    (t, a, p) => { let tt = t; const n = 4 + Math.floor(r() * 3); for (let i = 0; i < n; i++) { const f = 2000 + r() * 1500, d = 0.1 + r() * 0.08; note(tt, d, f, f * (r() < 0.5 ? 1.25 : 0.8), a, p); tt += Math.floor((d + 0.05 + r() * 0.08) * SR); } },
+  ];
+  for (let t = 2 + r() * 4; t < 178; t += 4 + r() * 10 + (r() < 0.2 ? 12 : 0)) {
+    const sp = species[Math.floor(r() * species.length)], dist = r();
+    sp(Math.floor(t * SR), 0.35 + 0.65 * (1 - dist), r() * 1.6 - 0.8);
+    if (r() < 0.35) sp(Math.floor((t + 1.2 + r()) * SR), 0.3, r() * 1.6 - 0.8); // a reply
+  }
+  // Distance: soft echoes from the trees and a gentle low-pass.
+  const o = stereo(len), taps = [[0.043, 0.35, 1], [0.097, 0.25, 0], [0.161, 0.18, 1], [0.233, 0.12, 0]];
+  for (let c = 0; c < 2; c++) {
+    const d = o[c]; d.set(dry[c]);
+    for (const [dt, g, cross] of taps) { const s = dry[cross ? 1 - c : c], off = Math.floor(dt * SR); for (let i = 0; i < len; i++) d[(i + off) % len] += s[i] * g; }
+    let y = 0; const k = 1 - Math.exp(-TAU * 5000 / SR); for (let pass = 0; pass < 2; pass++) for (let i = 0; i < len; i++) { y += k * (d[i] - y); if (pass) d[i] = y; }
+  }
+  return o;
+}
+
+function synthOcean(shore) {
+  const len = 180 * SR, r = rng(shore ? 909 : 808), o = stereo(len), envSum = new Float32Array(len);
+  const kPink = (() => { const t = pink(rng(1)); let s = 0; for (let i = 0; i < SR * 3; i++) { const v = t(); s += v * v; } return 1 / Math.sqrt(s / (SR * 3)); })();
+  // Wave timing: random 8–14 s periods, rescaled to tile the 180 s loop exactly.
+  let periods = [], sum = 0; while (sum < 180) { const P = 8 + 6 * r(); periods.push(P); sum += P; }
+  periods = periods.map(P => P * 180 / sum);
+  let t0 = r() * 3; const setPh = r() * TAU;
+  periods.forEach((P, idx) => {
+    const I = shore ? Math.max(0.4, Math.min(1, 0.65 + 0.2 * Math.sin(setPh + idx * 0.85) + 0.17 * (r() * 2 - 1)))
+                     : Math.max(0.55, Math.min(1, 0.75 + 0.12 * Math.sin(setPh + idx * 0.85) + 0.12 * (r() * 2 - 1)));
+    wave(Math.floor(t0 * SR), P, I); t0 += P;
+  });
+  function wave(start, P, I) {
+    const D = Math.floor(P * 1.75 * SR), Tr = P * (0.3 + 0.14 * r()), tau = P * (shore ? 0.22 : 0.3);
+    const fPeak = (shore ? 3000 : 1500) * (0.75 + 0.35 * I), crashF = shore ? 6000 : 1900, crashW = shore ? 0.85 : 0.5;
+    const nC = pink(r), nL = pink(r), nR = pink(r), wl = white(r), wr = white(r);
+    const bL = new SVF(200, 0.6), bR = new SVF(200, 0.6), bhL = new BQ('hp', 110), bhR = new BQ('hp', 110), cL = new SVF(crashF, 0.6), cR = new SVF(crashF, 0.6), hL = new BQ('hp', 250), hR = new BQ('hp', 250);
+    const fzL = [new BQ('hp', 2200), new BQ('lp', 8000)], fzR = [new BQ('hp', 2200), new BQ('lp', 8000)], grain = wander(r, 35), grain2 = wander(r, 31);
+    const dwL = [new BQ('hp', 1400), new BQ('lp', 5000)], dwR = [new BQ('hp', 1400), new BQ('lp', 5000)];
+    const c0 = (r() * 2 - 1) * 0.35, dir = r() < 0.5 ? -1 : 1, tb = Tr + P * 0.3, fadeN = SR;
+    let gl = 0, gr = 0;
+    for (let j = 0; j < D; j++) {
+      const t = j / SR;
+      let env = t < Tr ? Math.pow(t / Tr, shore ? 1.8 : 1.5) : Math.exp(-(t - Tr) / tau);
+      if (j > D - fadeN) env *= (D - j) / fadeN;
+      const crash = t >= Tr ? (1 - Math.exp(-(t - Tr) / 0.06)) * Math.exp(-(t - Tr) / (shore ? 0.7 : 0.9)) : 0;
+      if ((j & 15) === 0) {
+        const fc = 200 + (fPeak - 200) * Math.pow(env, 1.1); bL.set(fc); bR.set(fc);
+        // A breaking wave travels along the beach: drift the pan during the crash.
+        const p = Math.max(-0.9, Math.min(0.9, c0 + dir * 0.45 * (Math.min(1, Math.max(0, (t - Tr + 1) / 4)) - 0.5)));
+        gl = I * panL(p); gr = I * panR(p);
+      }
+      const cm = nC() * kPink * 0.6;
+      let L = bhL.p(bL.p(cm + nL() * kPink * 0.8)) * env, R = bhR.p(bR.p(cm + nR() * kPink * 0.8)) * env;
+      if (crash > 0.0005) { L += hL.p(cL.p(wl())) * crash * crashW * 1.7; R += hR.p(cR.p(wr())) * crash * crashW * 1.7; }
+      if (shore) {
+        const tf = t - Tr - 0.15;
+        if (tf > 0) {
+          const foam = (1 - Math.exp(-tf / 0.3)) * Math.exp(-tf / (P * 0.25)) * (j > D - fadeN ? (D - j) / fadeN : 1);
+          L += fzL[1].p(fzL[0].p(wl())) * foam * 0.5 * (0.45 + 0.55 * Math.abs(grain()));
+          R += fzR[1].p(fzR[0].p(wr())) * foam * 0.5 * (0.45 + 0.55 * Math.abs(grain2()));
+        }
+        const tw = t - tb;
+        if (tw > 0) {
+          const bw = (1 - Math.exp(-tw / 0.8)) * Math.exp(-tw / (P * 0.28)) * (j > D - fadeN ? (D - j) / fadeN : 1);
+          L += dwL[1].p(dwL[0].p(nL() * kPink)) * bw * 0.3; R += dwR[1].p(dwR[0].p(nR() * kPink)) * bw * 0.3;
+        }
+      }
+      const k = (start + j) % len;
+      o[0][k] += L * gl; o[1][k] += R * gr; envSum[k] += env * I;
+    }
+    if (shore) { // pebbles rattling in the backwash
+      const n = Math.floor(I * P * 110);
+      for (let i = 0; i < n; i++) {
+        const tt = tb + 0.25 + (-Math.log(1 - r())) * P * 0.2; if (tt * SR >= D - fadeN) continue;
+        const tw = tt - tb, bw = (1 - Math.exp(-tw / 0.8)) * Math.exp(-tw / (P * 0.28));
+        const big = r() < 0.08;
+        burst(o, r, start + Math.floor(tt * SR), big ? 900 + r() * 900 : 2200 + r() * 4500, big ? 2 : 2.5 + r() * 3,
+          big ? 0.003 : 0.0006 + r() * 0.0015, bw * I * (big ? 0.5 : 0.35 + r() * 0.5), c0 + (r() * 2 - 1) * 0.6);
+      }
+    }
+  }
+  // Continuous low surf rumble underneath, swelling with the waves (no silence between sets).
+  const X = 6 * SR, N = len + X, bb = stereo(N);
+  const mkR = rr => chain(brown(rr), new BQ('lp', 170, 0.6), new BQ('hp', 25));
+  const mkH = shore ? (rr => chain(pink(rr), new BQ('hp', 700), new BQ('lp', 3200))) : (rr => chain(pink(rr), new BQ('lp', 550), new BQ('hp', 80)));
+  const rC = unit(mkR, r), rL = unit(mkR, r), rR = unit(mkR, r), hL = unit(mkH, r), hR = unit(mkH, r);
+  for (let i = 0; i < N; i++) { const c = rC() * 0.6; bb[0][i] = c + rL() * 0.7 + hL() * 0.28; bb[1][i] = c + rR() * 0.7 + hR() * 0.28; }
+  const bed = loopify(bb, len, X);
+  // Smooth the wave envelope (two circular passes so the loop point is continuous).
+  const sm = new Float32Array(len), ka = 1 - Math.exp(-1 / (1.5 * SR)); let y = 0;
+  for (let pass = 0; pass < 2; pass++) for (let i = 0; i < len; i++) { y += ka * (envSum[i] - y); sm[i] = y; }
+  const wRms = rms(o), bRms = rms(bed), bedW = (shore ? 0.6 : 1.0) * wRms / bRms;
+  for (let i = 0; i < len; i++) { const m = bedW * (0.8 + 0.4 * sm[i]); o[0][i] += bed[0][i] * m; o[1][i] += bed[1][i] * m; }
+  return o;
+}
+
+const SYNTH = { fan: synthFan, purifier: synthPurifier, rain: synthRain, shower: synthShower, forest: synthForest, creek: synthCreek, birds: synthBirds, oceanD: () => synthOcean(false), oceanS: () => synthOcean(true) };
+
+// Normalize and convert to interleaved 16-bit stereo for compact storage.
+function finalize(name, o) {
+  let k;
+  if (name === 'birds') { let pk = 0; for (const c of o) for (let i = 0; i < c.length; i++) pk = Math.max(pk, Math.abs(c[i])); k = TARGET.birds / (pk || 1); }
+  else k = TARGET[name] / (rms(o) || 1);
+  const n = o[0].length, out = new Int16Array(n * 2);
+  for (let i = 0; i < n; i++) { out[2 * i] = soft(o[0][i] * k) * 32767; out[2 * i + 1] = soft(o[1][i] * k) * 32767; }
+  return out;
+}
+function soft(x) { const a = Math.abs(x); if (a <= 0.8) return x; return Math.sign(x) * (0.8 + 0.2 * Math.tanh((a - 0.8) / 0.2)); }
+
+// ---------- Cache (IndexedDB) ----------
+let dbp = null;
+function db() {
+  if (!dbp) dbp = new Promise(res => {
+    try {
+      const q = indexedDB.open('sleep-sounds', 1);
+      q.onupgradeneeded = () => q.result.createObjectStore('layers');
+      q.onsuccess = () => res(q.result); q.onerror = () => res(null);
+    } catch (e) { res(null); }
+  });
+  return dbp;
+}
+async function idb(mode, key, val) {
+  const d = await db(); if (!d) return null;
+  return new Promise(res => {
+    try {
+      const tx = d.transaction('layers', mode), st = tx.objectStore('layers'), q = mode === 'readonly' ? st.get(key) : st.put(val, key);
+      q.onsuccess = () => res(q.result); q.onerror = () => res(null);
+    } catch (e) { res(null); }
+  });
+}
+const key = n => n + '@v' + VERSION + '@' + SR;
+
+// ---------- Layer management ----------
+const LAYERS = {};
+async function load(name, keep, quiet) {
+  if (LAYERS[name]) return LAYERS[name];
+  const hit = await idb('readonly', key(name));
+  if (hit) { const a = new Int16Array(hit); if (keep) LAYERS[name] = a; return a; }
+  if (!quiet) postMessage({ type: 'prep', name, on: true });
+  const a = finalize(name, SYNTH[name]());
+  await idb('readwrite', key(name), a.buffer);
+  if (!quiet) postMessage({ type: 'prep', name, on: false });
+  if (keep) LAYERS[name] = a;
+  return a;
+}
+
+const smooth = s => s * s * (3 - 2 * s);
+// Render a mix: frame i plays content position (p0 + i) of the 180 s timeline. Each layer's
+// gain holds at `from` for `pre` seconds, then moves to `to` over `ramp` seconds with
+// power-preserving interpolation, so shared layers stay steady through crossfades.
+async function mix(m) {
+  const used = NAMES.filter((n, i) => m.from[i] > 1e-4 || m.to[i] > 1e-4);
+  for (const n of NAMES) if (!used.includes(n)) delete LAYERS[n];
+  for (const n of used) await load(n, true);
+  const frames = Math.round(m.len * SR), Lf = LOOP * SR, p0 = ((Math.round(m.p0 * SR) % Lf) + Lf) % Lf;
+  const preF = Math.round(m.pre * SR), rampF = Math.max(1, Math.round(m.ramp * SR));
+  const buf = new ArrayBuffer(44 + frames * 4), v = new DataView(buf), out = new Int16Array(buf, 44, frames * 2);
+  const str = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
+  str(0, 'RIFF'); v.setUint32(4, 36 + frames * 4, true); str(8, 'WAVE'); str(12, 'fmt '); v.setUint32(16, 16, true);
+  v.setUint16(20, 1, true); v.setUint16(22, 2, true); v.setUint32(24, SR, true); v.setUint32(28, SR * 4, true);
+  v.setUint16(32, 4, true); v.setUint16(34, 16, true); str(36, 'data'); v.setUint32(40, frames * 4, true);
+  const act = used.map(n => { const i = NAMES.indexOf(n); return { d: LAYERS[n], a: m.from[i], b: m.to[i] }; });
+  const CH = 4096, acc = new Float32Array(CH * 2), e = new Float32Array(CH), inv = 1 / 32767;
+  for (let s = 0; s < frames; s += CH) {
+    const n = Math.min(CH, frames - s); acc.fill(0);
+    for (let j = 0; j < n; j++) { const d = s + j - preF; e[j] = d < 0 ? 0 : d >= rampF ? 1 : smooth(d / rampF); }
+    for (const A of act) {
+      const d = A.d, lf = d.length >> 1, a2 = A.a * A.a, b2 = A.b * A.b, same = A.a === A.b;
+      let k = (p0 + s) % Lf % lf;
+      for (let j = 0; j < n; j++) {
+        const g = (same ? A.a : Math.sqrt(a2 + (b2 - a2) * e[j])) * inv;
+        acc[2 * j] += d[2 * k] * g; acc[2 * j + 1] += d[2 * k + 1] * g;
+        if (++k >= lf) k = 0;
+      }
+    }
+    for (let j = 0; j < n * 2; j++) out[s * 2 + j] = Math.round(soft(acc[j]) * 32767);
+  }
+  return buf;
+}
+
+let queue = Promise.resolve();
+onmessage = ev => {
+  const m = ev.data;
+  queue = queue.then(async () => {
+    try {
+      if (m.type === 'mix') { const wav = await mix(m); postMessage({ id: m.id, wav }, [wav]); }
+      else if (m.type === 'warm') { await load(m.name, false, true); postMessage({ id: m.id }); }
+    } catch (err) { postMessage({ id: m.id, error: String(err && err.message || err) }); }
+  });
+};
+</script>
+
+<!-- ===================== App ===================== -->
+<script>
+'use strict';
+const LOOP = 180;
+const NAMES = ['fan', 'purifier', 'rain', 'shower', 'forest', 'creek', 'birds', 'oceanD', 'oceanS'];
+const SOUNDS = [
+  { id: 'fan', name: 'Fan', sub: 'Deep, steady box-fan rumble' },
+  { id: 'purifier', name: 'Air purifier', sub: 'Smooth, even airflow' },
+  { id: 'rain', name: 'Rain', sub: 'Soft steady rainfall' },
+  { id: 'shower', name: 'Shower', sub: 'Bright, dense water spray' },
+  { id: 'forest', name: 'Oregon rainforest', sub: 'Rain under a thick canopy' },
+  { id: 'ocean', name: 'Ocean', sub: 'Slow rolling waves' },
+];
+const PRESETS = [
+  { name: 'Coast', mix: { ocean: { on: true, vol: 72, style: 'distant' }, fan: { on: true, vol: 38 } } },
+  { name: 'Pacific Northwest', mix: { forest: { on: true, vol: 72, creek: true, birds: false }, fan: { on: true, vol: 34 } } },
+  { name: 'Shoreline Storm', mix: { ocean: { on: true, vol: 66, style: 'shore' }, rain: { on: true, vol: 56 } } },
+  { name: 'Hotel Shield', mix: { fan: { on: true, vol: 86 }, purifier: { on: true, vol: 72 } } },
+  { name: 'Rainy Night', mix: { rain: { on: true, vol: 62 }, fan: { on: true, vol: 52 } } },
+  { name: 'Steam', mix: { shower: { on: true, vol: 60 }, purifier: { on: true, vol: 50 } } },
+];
+const TIMERS = [0, 1, 2, 4, 8];
+
+const $ = id => document.getElementById(id);
+const clone = o => JSON.parse(JSON.stringify(o));
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+function baseSounds() {
+  return { fan: { on: false, vol: 50 }, purifier: { on: false, vol: 50 }, rain: { on: false, vol: 55 }, shower: { on: false, vol: 50 },
+    forest: { on: false, vol: 65, creek: true, birds: false }, ocean: { on: false, vol: 65, style: 'distant' } };
+}
+function mixFrom(partial) { const s = baseSounds(); for (const k in partial) Object.assign(s[k], partial[k]); return s; }
+
+// ---------- Persistent state ----------
+function lsGet(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }
+function lsSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+const state = (() => {
+  const saved = lsGet('ssm.state');
+  const st = { sounds: mixFrom(PRESETS[0].mix), master: 80, preset: 'Coast' };
+  if (saved && saved.sounds) {
+    for (const k in st.sounds) if (saved.sounds[k]) Object.assign(st.sounds[k], saved.sounds[k]);
+    if (typeof saved.master === 'number') st.master = saved.master;
+    st.preset = saved.preset || null;
+  }
+  return st;
+})();
+let customs = lsGet('ssm.custom') || [];
+const save = () => lsSet('ssm.state', state);
+
+// ---------- Gains ----------
+const curve = v => 1.3 * Math.pow(v / 100, 1.5);
+const masterGain = () => Math.pow(state.master / 100, 1.5);
+function gains(withMaster) {
+  const S = state.sounds, g = new Array(NAMES.length).fill(0), on = id => S[id].on ? curve(S[id].vol) : 0;
+  g[0] = on('fan'); g[1] = on('purifier'); g[2] = on('rain'); g[3] = on('shower');
+  const f = on('forest'); g[4] = f; g[5] = S.forest.creek ? f * 0.55 : 0; g[6] = S.forest.birds ? f * 0.4 : 0;
+  const o = on('ocean'); g[7] = S.ocean.style === 'distant' ? o : 0; g[8] = S.ocean.style === 'shore' ? o : 0;
+  const m = withMaster ? masterGain() : 1;
+  return g.map(x => Math.round(x * m * 1000) / 1000);
+}
+const ZERO = NAMES.map(() => 0);
+const sigOf = g => g.join(',');
+
+// ---------- Worker & rendered files ----------
+const worker = new Worker(URL.createObjectURL(new Blob([$('worker-src').textContent], { type: 'text/javascript' })));
+let reqId = 0; const waiting = new Map(); const prepping = new Set();
+worker.onmessage = e => {
+  const m = e.data;
+  if (m.type === 'prep') { m.on ? prepping.add(m.name) : prepping.delete(m.name); showPrep(); return; }
+  const w = waiting.get(m.id); if (!w) return; waiting.delete(m.id);
+  m.error ? w.rej(new Error(m.error)) : w.res(m);
+};
+const call = msg => new Promise((res, rej) => { const id = ++reqId; waiting.set(id, { res, rej }); worker.postMessage({ ...msg, id }); });
+const PREP_NAMES = { fan: 'fan', purifier: 'air purifier', rain: 'rain', shower: 'shower', forest: 'rainforest', creek: 'creek', birds: 'birds', oceanD: 'ocean', oceanS: 'shoreline' };
+function showPrep() {
+  const on = prepping.size > 0; $('prep').classList.toggle('on', on);
+  if (on) $('prepText').textContent = 'Preparing sounds… ' + [...prepping].map(n => PREP_NAMES[n]).join(', ');
+}
+
+// A "file" is a rendered WAV plus the description of what it contains.
+async function render(spec) {
+  const m = await call({ type: 'mix', ...spec });
+  return { ...spec, url: URL.createObjectURL(new Blob([m.wav], { type: 'audio/wav' })) };
+}
+const files = new Map(); // small cache of steady loops / intros keyed by content
+async function cached(k, spec) {
+  if (files.has(k)) { const f = files.get(k); files.delete(k); files.set(k, f); return f; }
+  const p = render(spec); files.set(k, p);
+  while (files.size > 4) { const [ok, of] = files.entries().next().value; files.delete(ok); of.then(f => release(f)); }
+  try { return await p; } catch (e) { files.delete(k); throw e; }
+}
+function inUse(f) { return engine.uses(f); }
+function release(f) { if (!f || inUse(f)) return; for (const v of files.values()) if (v === f) return; setTimeout(() => { if (!inUse(f)) URL.revokeObjectURL(f.url); }, 2000); }
+const loopFile = g => cached('S' + sigOf(g), { from: g, to: g, p0: 0, pre: 0, ramp: 0, len: LOOP, loop: true });
+const introFile = g => cached('I' + sigOf(g), { from: ZERO, to: g, p0: 0, pre: 0, ramp: 10, len: 26, loop: false });
+
+function gainAt(f, ft) { // effective per-layer gains of file f at file time ft
+  const d = ft - f.pre; if (d <= 0 || f.ramp === 0) return d <= 0 ? f.from.slice() : f.to.slice();
+  if (d >= f.ramp) return f.to.slice();
+  const s = d / f.ramp, e = s * s * (3 - 2 * s);
+  return f.from.map((a, i) => Math.sqrt(a * a + (f.to[i] * f.to[i] - a * a) * e));
+}
+const once = (el, ev) => new Promise(res => el.addEventListener(ev, res, { once: true }));
+async function loaded(el) { if (el.readyState < 1) await Promise.race([once(el, 'loadedmetadata'), sleep(4000)]); }
+const SILENT = (() => {
+  const n = 2205, b = new ArrayBuffer(44 + n * 2), v = new DataView(b), w = (o, s) => [...s].forEach((c, i) => v.setUint8(o + i, c.charCodeAt(0)));
+  w(0, 'RIFF'); v.setUint32(4, 36 + n * 2, true); w(8, 'WAVE'); w(12, 'fmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+  v.setUint32(24, 22050, true); v.setUint32(28, 44100, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true); w(36, 'data'); v.setUint32(40, n * 2, true);
+  return URL.createObjectURL(new Blob([b], { type: 'audio/wav' }));
+})();
+
+// ---------- Engine A: browsers that allow volume control (Android, desktop) ----------
+// Each mix is one seamless 180 s loop in an <audio loop>. Fades are volume ramps; a mix
+// change starts the new loop on a second element at an unrelated position and equal-power
+// crossfades, so shared layers keep a constant level.
+function makeVolumeEngine() {
+  const E = { playing: false, voices: [], cur: null, timerId: 0 };
+  const apply = v => { v.el.volume = Math.max(0, Math.min(1, v.level * masterGain())); };
+  const shapes = { in: s => s * s, sin: s => Math.sin(s * Math.PI / 2), cos: s => 1 - Math.cos(s * Math.PI / 2) };
+  function tick() {
+    const now = performance.now(); let busy = false;
+    for (const v of E.voices.slice()) {
+      const r = v.ramp; if (!r) continue; busy = true;
+      const s = Math.min(1, (now - r.t0) / r.dur); v.level = r.a + (r.b - r.a) * shapes[r.shape](s); apply(v);
+      if (s >= 1) { v.ramp = null; r.done && r.done(); }
+    }
+    if (!busy) { clearInterval(E.timerId); E.timerId = 0; }
+  }
+  function rampTo(v, b, sec, shape, done) { v.ramp = { a: v.level, b, t0: performance.now(), dur: Math.max(1, sec * 1000), shape, done }; if (!E.timerId) E.timerId = setInterval(tick, 50); }
+  function kill(v) { v.el._kill = true; v.el.pause(); E.voices = E.voices.filter(x => x !== v); v.el.removeAttribute('src'); v.el.load(); release(v.file); }
+  async function spawn(file, at) {
+    const el = new Audio(); el.loop = true; el.preload = 'auto'; el.src = file.url;
+    const v = { el, file, level: 0, ramp: null }; apply(v); E.voices.push(v);
+    el.addEventListener('pause', () => { if (!el._kill && E.playing && E.cur === v) external(); });
+    await loaded(el); try { el.currentTime = at; } catch (e) {}
+    await el.play(); return v;
+  }
+  E.uses = f => E.voices.some(v => v.file === f);
+  E.pos = () => { const v = E.cur; return v ? v.el.currentTime % LOOP : 0; };
+  E.start = async () => {
+    E.playing = true; const f = await loopFile(gains(false)); if (!E.playing) return;
+    try { const v = await spawn(f, 0); E.cur = v; rampTo(v, 1, 10, 'in'); }
+    catch (e) { E.playing = false; needsTap(); }
+  };
+  E.update = async ramp => {
+    if (!E.playing) return; const f = await loopFile(gains(false));
+    if (!E.playing || (E.cur && E.cur.file === f)) return;
+    const at = (E.pos() + LOOP * (0.35 + Math.random() * 0.3)) % LOOP;
+    try {
+      const v = await spawn(f, at);
+      for (const o of E.voices) if (o !== v) rampTo(o, 0, ramp, 'cos', () => kill(o));
+      E.cur = v; rampTo(v, 1, ramp, 'sin');
+    } catch (e) {}
+  };
+  E.stop = fade => {
+    E.playing = false;
+    for (const v of E.voices.slice()) fade > 0.2 ? rampTo(v, 0, fade, 'cos', () => kill(v)) : kill(v);
+    E.cur = null;
+  };
+  E.master = () => { for (const v of E.voices) apply(v); };
+  E.masterBaked = false;
+  E.alive = () => !!E.cur && !E.cur.el.paused;
+  E.unlock = () => {};
+  function external() { E.playing = false; for (const v of E.voices.slice()) kill(v); E.cur = null; onExternalStop(); }
+  return E;
+}
+
+// ---------- Engine B: iOS (element volume is read-only) ----------
+// All gains, master volume and fades are baked into the audio. A transition renders a short
+// file that starts exactly where the current loop is, ramps to the new mix, and is then
+// handed off (position-matched) to the new steady loop.
+function makeBakedEngine() {
+  const E = { playing: false, els: [new Audio(), new Audio()], cur: 0, gen: 0, handoff: null };
+  for (const el of E.els) {
+    el.preload = 'auto';
+    el.addEventListener('pause', () => { if (el._expect) { el._expect = false; return; } if (el === E.els[E.cur] && E.playing && !el.ended) external(); });
+    el.addEventListener('ended', () => { if (el === E.els[E.cur]) checkHandoff(true); });
+    el.addEventListener('timeupdate', () => { if (el === E.els[E.cur]) { checkHandoff(false); timerTick(); } });
+  }
+  const A = () => E.els[E.cur];
+  const pos = el => el._f ? (el._f.p0 + el.currentTime) % LOOP : 0;
+  E.uses = f => E.els.some(el => el._f === f);
+  E.pos = () => pos(A());
+  E.masterBaked = true;
+  E.unlock = () => {
+    for (const el of E.els) if (!el._unlocked) {
+      el._unlocked = true; if (el._f) continue;
+      el.src = SILENT; el.play().then(() => { if (!el._f) { el._expect = true; el.pause(); } }).catch(() => {});
+    }
+  };
+  async function swapTo(f, fileTime) {
+    const a = A(), b = E.els[1 - E.cur], old = a._f;
+    b._f = f; b.loop = !!f.loop; b.src = f.url; await loaded(b);
+    let ft = fileTime;
+    if (ft == null) ft = a._f ? (pos(a) - f.p0 + LOOP) % LOOP + 0.05 : 0;
+    if (ft > f.len - 0.1) ft = f.loop ? ft % f.len : f.len - 0.1;
+    try { b.currentTime = ft; } catch (e) {}
+    try { await b.play(); } catch (err) {
+      // Starting a second element can be refused in the background; switch this one instead.
+      b._f = null; b.removeAttribute('src');
+      a._expect = !a.paused; a._f = f; a.loop = !!f.loop; a.src = f.url; await loaded(a);
+      try { a.currentTime = ft; } catch (e) {}
+      await a.play(); a._expect = false; release(old); return;
+    }
+    if (!a.paused) { a._expect = true; a.pause(); }
+    a._f = null; E.cur = 1 - E.cur; release(old);
+  }
+  function checkHandoff(ended) {
+    const h = E.handoff; if (!h || h.busy) return;
+    const a = A(); if (!h.file || a._f !== h.from) return;
+    if (ended || a.currentTime >= h.at) {
+      h.busy = true;
+      swapTo(h.file).then(() => { if (E.handoff === h) E.handoff = null; }, () => { h.busy = false; });
+    }
+  }
+  function planHandoff(gen, T, g) {
+    const h = { from: T, at: T.pre + T.ramp + 0.4, file: null, busy: false }; E.handoff = h;
+    loopFile(g).then(f => { if (gen === E.gen) { h.file = f; checkHandoff(A().ended); } });
+    const wait = () => { if (E.handoff !== h) return; checkHandoff(A().ended); if (E.handoff === h) setTimeout(wait, 400); };
+    setTimeout(wait, 400);
+  }
+  E.start = async () => {
+    E.playing = true; const gen = ++E.gen, g = gains(true);
+    try {
+      const T = await introFile(g); if (gen !== E.gen) return;
+      const a = A(); if (a._f && !a.paused) { a._expect = true; a.pause(); }
+      a._f = T; a.loop = false; if (a.src !== T.url) a.src = T.url;
+      await loaded(a); try { a.currentTime = 0; } catch (e) {}
+      await a.play(); planHandoff(gen, T, g);
+    } catch (e) { if (gen === E.gen) { E.playing = false; needsTap(); } }
+  };
+  E.update = async ramp => {
+    if (!E.playing) return; const gen = ++E.gen, g = gains(true), a = A();
+    if (!a._f) return;
+    const from = gainAt(a._f, a.currentTime); if (sigOf(from) === sigOf(g) && a._f.loop) return;
+    const pre = 0.8, T = await render({ from, to: g, p0: pos(a), pre, ramp, len: pre + ramp + 14, loop: false });
+    if (gen !== E.gen) { URL.revokeObjectURL(T.url); return; }
+    E.handoff = null;
+    try { await swapTo(T); planHandoff(gen, T, g); } catch (e) {}
+  };
+  E.stop = async fade => {
+    E.playing = false; const gen = ++E.gen, a = A(); E.handoff = null;
+    if (!a._f || a.paused) return;
+    if (fade <= 0.2) { a._expect = true; a.pause(); return; }
+    const T = await render({ from: gainAt(a._f, a.currentTime), to: ZERO, p0: pos(a), pre: 0.4, ramp: fade, len: 0.4 + fade + 0.6, loop: false });
+    if (gen !== E.gen) { URL.revokeObjectURL(T.url); return; }
+    try { await swapTo(T); } catch (e) {}
+  };
+  E.master = () => {};
+  E.alive = () => !A().paused;
+  function external() { E.playing = false; E.gen++; E.handoff = null; onExternalStop(); }
+  return E;
+}
+
+const isIOS = /iP(hone|od|ad)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const volumeWorks = (() => { try { const a = new Audio(); a.volume = 0.5; return Math.abs(a.volume - 0.5) < 0.01; } catch (e) { return false; } })();
+const forced = new URLSearchParams(location.search).get('engine'); // ?engine=baked to test the iOS path
+const engine = (forced ? forced === 'baked' : (isIOS || !volumeWorks)) ? makeBakedEngine() : makeVolumeEngine();
+
+// ---------- Transport ----------
+let wantPlaying = false;
+function onExternalStop() { wantPlaying = false; timer.deadline = 0; refreshTransport(); }
+function needsTap() { wantPlaying = false; $('resume').style.display = 'inline-block'; refreshTransport(); }
+function play() {
+  engine.unlock(); $('resume').style.display = 'none';
+  wantPlaying = true; if (timer.hours && !timer.deadline) timer.deadline = Date.now() + timer.hours * 3600e3;
+  engine.start(); refreshTransport();
+}
+function pause(fade) { wantPlaying = false; timer.deadline = 0; timer.fading = false; engine.stop(fade); refreshTransport(); prerender(); }
+
+let applyT = 0;
+function changed(ramp, delay = 250) {
+  save(); refreshUI();
+  clearTimeout(applyT);
+  applyT = setTimeout(() => { if (engine.playing) engine.update(ramp); else prerender(); }, delay);
+}
+let preT = 0;
+function prerender() {
+  clearTimeout(preT);
+  preT = setTimeout(() => {
+    const g = gains(engine.masterBaked);
+    const p = engine.masterBaked ? introFile(g).then(() => loopFile(g)) : loopFile(g);
+    p.catch(() => {}).then(warmAll);
+  }, 300);
+}
+let warmed = false;
+async function warmAll() { // render remaining sounds into the cache in the background
+  if (warmed) return; warmed = true;
+  for (const n of NAMES) { await sleep(400); try { await call({ type: 'warm', name: n }); } catch (e) {} }
+}
+
+// ---------- Sleep timer ----------
+const timer = { hours: 0, deadline: 0, fading: false };
+function timerTick() {
+  if (!timer.deadline || !wantPlaying) return;
+  const left = timer.deadline - Date.now();
+  if (left <= 60e3 && !timer.fading) {
+    timer.fading = true; wantPlaying = false;
+    engine.stop(Math.max(2, left / 1000));
+    setTimeout(() => { timer.hours = 0; timer.deadline = 0; timer.fading = false; refreshUI(); refreshTransport(); prerender(); }, Math.max(2000, left));
+    refreshTransport();
+  }
+}
+setInterval(() => { timerTick(); showTimerLeft(); }, 1000);
+function showTimerLeft() {
+  const el = $('timerLeft');
+  if (!timer.hours) { el.textContent = ''; return; }
+  if (!timer.deadline) { el.textContent = `Fades out ${timer.hours}h after you press play`; return; }
+  const s = Math.max(0, Math.round((timer.deadline - Date.now()) / 1000));
+  el.textContent = timer.fading ? 'Fading out…' : `${Math.floor(s / 3600)}:${String(Math.floor(s / 60) % 60).padStart(2, '0')} left`;
+}
+
+// ---------- Media Session (lock screen) ----------
+function presetLabel() { return state.preset || 'Custom mix'; }
+function updateMediaSession() {
+  if (!('mediaSession' in navigator)) return;
+  try {
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: presetLabel(), artist: 'Sleep Sounds', album: describeMix(),
+      artwork: [{ src: 'icon-192.png', sizes: '192x192', type: 'image/png' }, { src: 'icon-512.png', sizes: '512x512', type: 'image/png' }],
+    });
+    navigator.mediaSession.playbackState = wantPlaying ? 'playing' : 'paused';
+  } catch (e) {}
+}
+if ('mediaSession' in navigator) {
+  const h = (a, f) => { try { navigator.mediaSession.setActionHandler(a, f); } catch (e) {} };
+  h('play', () => { if (!wantPlaying) play(); });
+  h('pause', () => { if (wantPlaying) pause(1.5); });
+  h('stop', () => { if (wantPlaying) pause(1.5); });
+}
+function describeMix() {
+  const S = state.sounds; return SOUNDS.filter(s => S[s.id].on).map(s => s.id === 'ocean' ? (S.ocean.style === 'shore' ? 'Shoreline' : 'Distant surf') : s.name).join(' + ') || 'Silence';
+}
+
+// ---------- UI ----------
+const ICON_PLAY = '<svg viewBox="0 0 24 24"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.2-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg>';
+const ICON_PAUSE = '<svg viewBox="0 0 24 24"><rect x="6.5" y="5" width="4" height="14" rx="1.2"/><rect x="13.5" y="5" width="4" height="14" rx="1.2"/></svg>';
+function refreshTransport() {
+  const b = $('play'); b.innerHTML = wantPlaying ? ICON_PAUSE : ICON_PLAY; b.classList.toggle('playing', wantPlaying);
+  b.setAttribute('aria-label', wantPlaying ? 'Pause' : 'Play');
+  $('nowLabel').textContent = presetLabel() + ' · ' + describeMix();
+  showTimerLeft(); updateMediaSession();
+}
+function selectPreset(name, mix) {
+  state.sounds = mixFrom(mix); state.preset = name; changed(5, 50);
+}
+function renderPresets() {
+  const box = $('presets'); box.innerHTML = '';
+  const add = (name, mix, custom) => {
+    const b = document.createElement('button'); b.className = 'preset' + (custom ? ' custom' : '') + (state.preset === name ? ' active' : '');
+    b.innerHTML = '<span class="pname"></span>'; b.firstChild.textContent = name;
+    b.onclick = () => selectPreset(name, mix);
+    if (custom) {
+      const d = document.createElement('span'); d.className = 'del'; d.setAttribute('role', 'button'); d.setAttribute('aria-label', 'Delete ' + name);
+      d.textContent = '×'; d.style.display = 'grid'; d.style.placeItems = 'center';
+      d.onclick = e => { e.stopPropagation(); if (confirm(`Delete preset "${name}"?`)) { customs = customs.filter(c => c.name !== name); lsSet('ssm.custom', customs); if (state.preset === name) state.preset = null; save(); refreshUI(); } };
+      b.appendChild(d);
+    }
+    box.appendChild(b);
+  };
+  PRESETS.forEach(p => add(p.name, p.mix, false));
+  customs.forEach(p => add(p.name, p.mix, true));
+  const s = document.createElement('button'); s.className = 'preset save'; s.textContent = '+ Save current mix';
+  s.onclick = () => {
+    const name = (prompt('Name this mix:', state.preset && !PRESETS.some(p => p.name === state.preset) ? state.preset : '') || '').trim().slice(0, 40);
+    if (!name) return;
+    if (PRESETS.some(p => p.name === name)) { alert('That name is used by a built-in preset.'); return; }
+    customs = customs.filter(c => c.name !== name); customs.push({ name, mix: clone(state.sounds) });
+    lsSet('ssm.custom', customs); state.preset = name; save(); refreshUI();
+  };
+  box.appendChild(s);
+}
+function seg(options, current, onPick) {
+  const d = document.createElement('div'); d.className = 'seg';
+  for (const [val, label] of options) {
+    const b = document.createElement('button'); b.textContent = label; if (val === current) b.className = 'on';
+    b.onclick = e => { e.stopPropagation(); onPick(val); }; d.appendChild(b);
+  }
+  return d;
+}
+function edited() { state.preset = null; }
+function renderCards() {
+  const box = $('cards'); box.innerHTML = '';
+  for (const s of SOUNDS) {
+    const st = state.sounds[s.id], card = document.createElement('div');
+    card.className = 'card' + (st.on ? ' on' : ''); card.dataset.id = s.id;
+    const head = document.createElement('button'); head.className = 'head';
+    head.innerHTML = '<span><div class="title"></div><div class="sub"></div></span><span class="switch"></span>';
+    head.querySelector('.title').textContent = s.name; head.querySelector('.sub').textContent = s.sub;
+    head.setAttribute('aria-pressed', st.on);
+    head.onclick = () => { st.on = !st.on; edited(); changed(3); };
+    const range = document.createElement('input'); range.type = 'range'; range.min = 0; range.max = 100; range.value = st.vol;
+    range.setAttribute('aria-label', s.name + ' volume'); range.disabled = !st.on;
+    range.oninput = () => { st.vol = +range.value; edited(); save(); };
+    range.onchange = () => { st.vol = +range.value; edited(); changed(2, 300); };
+    const row = document.createElement('div'); row.className = 'row'; row.appendChild(range);
+    card.append(head, row);
+    if (s.id === 'forest') {
+      const ex = document.createElement('div'); ex.className = 'extras';
+      const chip = (k, label) => seg([[true, label]], st[k], () => { st[k] = !st[k]; edited(); changed(3); });
+      ex.append(chip('creek', 'Distant creek'), chip('birds', 'Dawn birds'));
+      card.appendChild(ex);
+    }
+    if (s.id === 'ocean') {
+      const ex = document.createElement('div'); ex.className = 'extras';
+      ex.append(seg([['distant', 'Distant surf'], ['shore', 'Shoreline']], st.style, v => { st.style = v; edited(); changed(4); }));
+      card.appendChild(ex);
+    }
+    box.appendChild(card);
+  }
+}
+function renderTimer() {
+  const t = $('timer'); t.replaceWith(Object.assign(seg(TIMERS.map(h => [h, h ? h + 'h' : 'Off']), timer.hours, h => {
+    timer.hours = h; timer.fading = false; timer.deadline = h && wantPlaying ? Date.now() + h * 3600e3 : 0; refreshUI();
+  }), { id: 'timer' }));
+}
+function refreshUI() { renderPresets(); renderCards(); renderTimer(); refreshTransport(); }
+
+$('play').onclick = () => wantPlaying ? pause(4) : play();
+$('resume').onclick = () => play();
+const master = $('master'); master.value = state.master;
+master.oninput = () => { state.master = +master.value; save(); engine.master(); };
+master.onchange = () => { state.master = +master.value; save(); if (engine.masterBaked) changed(1.2, 200); };
+$('dimBtn').onclick = () => $('dim').classList.add('on');
+$('dim').onclick = () => $('dim').classList.remove('on');
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) return;
+  timerTick(); refreshTransport();
+  if (wantPlaying && !timer.fading) setTimeout(() => { if (wantPlaying && !engine.alive()) { engine.stop(0); needsTap(); } }, 1500);
+});
+
+refreshUI();
+prerender();
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(() => {});
+if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+</script>
+</body>
+</html>
