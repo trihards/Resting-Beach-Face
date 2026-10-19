@@ -1,0 +1,11 @@
+node_modules/
+
+# Test output
+*.wav
+*.png
+!icon-192.png
+!icon-512.png
+!icon-512-maskable.png
+!apple-touch-icon.png
+test-output/
+screenshots/
